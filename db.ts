@@ -1,6 +1,16 @@
 import { PostgresClient, loadEnv } from "./deps.ts";
+import * as utils from "./utils.ts";
+import { log } from "./deps.ts";
+import { initLog } from "./logging.ts";
 
-await loadEnv({export: true});
+initLog();
+try {
+	await utils.ensureEnvs(["PSQL_USER", "PSQL_DB", "PSQL_HOST", "PSQL_PASS", "PSQL_PORT"]);
+} catch(error) {
+	log.getLogger("errors").error(error);
+	Deno.exit(1);
+}
+
 const client = new PostgresClient({
     user: Deno.env.get("PSQL_USER"),
     database: Deno.env.get("PSQL_DB"),

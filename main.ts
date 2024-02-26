@@ -1,6 +1,6 @@
 import * as db from "./db.ts";
 import * as utils from "./utils.ts";
-import {Discord, loadEnv } from "./deps.ts";
+import {Discord, loadEnv, log} from "./deps.ts";
 import {updatePositions, getBadRunNumbers, outOfPlaceTrains} from './train_data.ts';
 import {getActiveAlerts} from './service_alerts.ts';
 import {searchStations} from './stations.ts';
@@ -8,12 +8,17 @@ import { TrainLine } from "./types.ts";
 import { Alert } from "./service_alerts.ts";
 import {Arrival, getArrivalsForStation} from './arrivals.ts';
 import { getStation } from "./stations.ts";
+import {initLog, discordLog} from "./logging.ts";
 
-const env = await loadEnv({export: true});
+initLog();
+discordLog.debug("Bot Starting...");
+
+await utils.ensureEnvs(["CTA_API_KEY", "DISCORD_TOKEN"]);
+
 const DISCORD_TOKEN = Deno.env.get("DISCORD_TOKEN");
 
 if(!DISCORD_TOKEN) {
-	console.error("No Discord token found in environment");
+	discordLog.error("No Discord token found in environment");
 	Deno.exit(1);
 }
 
@@ -22,10 +27,11 @@ const bot = Discord.createBot({
   intents: Discord.Intents.Guilds | Discord.Intents.GuildMessages | Discord.Intents.MessageContent,
   events: {
 		ready() {
-			console.log("Successfully connected to gateway");
+			log.info("Successfully connected to gateway");
 		},
 		async interactionCreate(b, i) {
 			if (i.data?.name === "ping") {
+				log.info(`Received ping from ${i.user.username}#${i.user.discriminator} (${i.user.id})`)
 				return await b.helpers.sendInteractionResponse(
 					i.id,
 					i.token,
@@ -42,7 +48,7 @@ const bot = Discord.createBot({
 			stationDataHandler(b, i);
 			if(i.data?.name === "broadcast_alert") {
 				if(i.user.id != 156126755646734336n) {
-					console.log(`Unauthorized user ${i.user.id.toString()} attempted to broadcast alert`);
+					log.getLogger("errors").error(`Unauthorized user ${i.user.id.toString()} attempted to broadcast alert`);
 					return await b.helpers.sendInteractionResponse(i.id, i.token, {
 						type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
 						data: {
@@ -101,6 +107,7 @@ const lineColor = (line: TrainLine) => {
 
 const trainDataHandler = async (b: Discord.Bot, i: Discord.Interaction) => {
 	if(i.data?.name === "getbadruns") {
+		log.info(`Received getbadruns command from ${i.user.username}#${i.user.discriminator} (${i.user.id})`)
 		const {response, embeds} = await getBadRuns();	  
 		// response = response + "```json\n" + JSON.stringify(badTrains) + "\n```" ;
 		// const response = `The following trains are out of place: ${JSON.stringify(badTrains)}`;
@@ -214,6 +221,7 @@ const getArrivalText = (arrival: Arrival): string => {
 	return `<t:${Math.floor(arrival.predictionTime.valueOf()/1000)}:R>`;
 }
 const alerts_command = async (b: Discord.Bot, i: Discord.Interaction) => {
+	log.info(`Received alerts command from ${i.user.username}#${i.user.discriminator} (${i.user.id})`);
 	// check if subcommand is subscribe
 	if(i.data?.options?.[0]?.name === "subscribe") {
 		subscribe_alerts(b, i);
@@ -259,13 +267,13 @@ const subscribe_alerts = async (b: Discord.Bot, i: Discord.Interaction) => {
 	if(Discord.calculatePermissions(i.member?.permissions || BigInt(0)).includes("MANAGE_GUILD")) {
 		let guild = await db.getGuild(i.guildId);
 		if(!guild) {
-			console.log("Guild not found. Creating new guild entry.");
+			log.info(`Guild ${i.guildId} not found in database. Creating new guild entry.`);
+			// console.log("Guild not found. Creating new guild entry.");
 			guild = {
 				guildId: i.guildId,
 				guildName: (await b.helpers.getGuild(i.guildId)).name,
 			}
 		}
-		console.log();
 		const channelId = BigInt(i.data?.options?.[0]?.options?.[0]?.value as string) || i.channelId;
 		if(!channelId || typeof channelId !== "bigint") return await b.helpers.sendInteractionResponse(i.id, i.token, {
 			type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
@@ -309,7 +317,7 @@ const unsubscribe_alerts = async (b: Discord.Bot, i: Discord.Interaction) => {
 	}
 	let guild = await db.getGuild(i.guildId);
 	if(!guild) {
-		console.log("Guild not found. Creating new guild entry.");
+		log.info(`Guild ${i.guildId} not found in database. Creating new guild entry.`);
 		guild = {
 			guildId: i.guildId,
 			guildName: (await b.helpers.getGuild(i.guildId)).name,
@@ -340,7 +348,7 @@ const unsubscribe_alerts = async (b: Discord.Bot, i: Discord.Interaction) => {
 };
 
 const pollAlerts = async () => {
-	console.log("Polling for alerts");
+	log.info("Polling for alerts");
 	const alerts = await getActiveAlerts({planned: true, accessibility: false, routes: ["red","blue","g","brn","p","y","pink","org"]});
 	alerts.forEach(async alert => {
 		await handleAlert(alert);
@@ -382,7 +390,7 @@ export const pushAlert = async (alert: Alert) => {
 				timestamp: new Date(alert.eventStart).valueOf(),
 			}]
 		}).then((msg) => {
-			console.log(`Published alert to ${sub.guildName} in #${sub.alertChannel}`);
+			log.info(`Published alert to ${sub.guildName} in #${sub.alertChannel}`)
 			published++;
 		}).catch((e) => {
 			console.error(e);
@@ -440,7 +448,7 @@ const getBadRuns = async () => {
 				},
 				{
 					name: "Next Stop",
-					value: `${train.nextStation.stopName}`,
+					value: `${train.nextStation?.stopName}`,
 				},
 				{
 					name: "Destination",
@@ -459,7 +467,8 @@ const getBadRuns = async () => {
 
 // Another way to do events
 bot.events.messageCreate = function (b, message) {
-	console.log(message.content);
+
+	// console.log(message.content);
 };
 
 bot.helpers.createGlobalApplicationCommand({

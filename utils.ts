@@ -1,3 +1,4 @@
+import { Discord, loadEnv, log } from "./deps.ts";
 import { TrainLine } from './types.ts';
 
 export function getTrainLine(lineString: string) {
@@ -52,4 +53,33 @@ export function trainLineString(trainLine: TrainLine) {
     case TrainLine.UNDEFINED:
       return "Undefined";
   }
+}
+
+export async function ensureEnvs(envs: string[]) {
+  await loadEnv({export: true});
+  for (const env of envs) {
+    if (!Deno.env.get(env)) {
+      log.getLogger("errors").error(`Environment variable ${env} is not set.`);
+      throw new Error(`Environment variable ${env} is not set.`);
+    }
+  }
+}
+
+export function sendErrorMessage(level: string, message: string) {
+  fetch(Deno.env.get("LOGGING_WEBHOOK")!, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      content: message,
+      username: "cta-discord-bot ERROR",
+      embeds: [
+        {
+          title: level,
+          description: message,
+        }
+      ]
+    }),
+  });
 }

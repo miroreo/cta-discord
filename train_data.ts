@@ -1,10 +1,17 @@
 import { StationStop, TrainLine, TrainPosition } from './types.ts';
 import { CTATTResponse } from "./types.ts";
 import {getStop, stops} from './stations.ts';
-import { loadEnv } from "./deps.ts";
+import { loadEnv, log } from "./deps.ts";
 import * as utils from "./utils.ts";
 
-await loadEnv({export: true});
+try {
+	await utils.ensureEnvs(["CTA_API_KEY"]);
+} catch(error) {
+    log.getLogger("errors").error("Error loading environment variables.");
+	// console.error(error);
+	// Deno.exit(1);
+}
+
 const API_KEY = Deno.env.get("CTA_API_KEY");
 
 const all_routes = "red,blue,brn,g,org,p,pink,y"
@@ -43,7 +50,7 @@ function translateCTATT(res: CTATTResponse) {
             return {line: utils.getTrainLine(line["@name"]), trains: []};
         if(!Array.isArray(line.train)) 
             line.train = (Array.from([line.train]) as Array<any>);
-        console.log(line.train);
+        // console.log(line.train);
         const trains: TrainPosition[] = line.train?.map(train => {
             return {
                 trainNumber: parseInt(train.rn),
@@ -203,6 +210,6 @@ function checkDelays() {
     })
 }
 await updatePositions();
-checkForOutOfPlaceTrains();
-checkRunNumbers();
-checkDelays();
+// checkForOutOfPlaceTrains();
+// checkRunNumbers();
+// checkDelays();
