@@ -1,12 +1,12 @@
-import { PostgresClient, load } from "./deps.ts";
+import { PostgresClient, loadEnv } from "./deps.ts";
 
-const env = await load();
+await loadEnv({export: true});
 const client = new PostgresClient({
-    user: env["PSQL_USER"],
-    database: env["PSQL_DB"],
-    hostname: env["PSQL_HOST"],
-    password: env["PSQL_PASS"],
-    port: parseInt(env["PSQL_PORT"]),
+    user: Deno.env.get("PSQL_USER"),
+    database: Deno.env.get("PSQL_DB"),
+    hostname: Deno.env.get("PSQL_HOST"),
+    password: Deno.env.get("PSQL_PASS"),
+    port: parseInt(Deno.env.get("PSQL_PORT") || "5432"),
 });
 await client.connect();
 type DiscordGuild = {

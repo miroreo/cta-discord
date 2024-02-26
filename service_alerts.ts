@@ -50,6 +50,7 @@ export type Alert = {
     majorAlert: boolean,
     alertURL: string,
     impactedService: ImpactedService[],
+    guid?: string,
 }
 type ImpactedService = {
     serviceType: "X" | "T" | "B" | "R",
@@ -77,7 +78,9 @@ export const getActiveAlerts = async (options?: {
     }
     return data.CTAAlerts.Alert.map(alert => {
         // console.log(alert);
-        if(!alert.ImpactedService?.Service.length) alert.ImpactedService.Service = [alert.ImpactedService.Service]; //@ts-ignore yes, I know this is a hack
+        if(!Array.isArray(!alert.ImpactedService?.Service)) {
+            alert.ImpactedService.Service = [alert.ImpactedService.Service as RawService] as RawService[];
+        }
         
         return {
             alertId: parseInt(alert.AlertId),
@@ -93,7 +96,7 @@ export const getActiveAlerts = async (options?: {
             TBD: alert.TBD === "1",
             majorAlert: alert.MajorAlert === "1",
             alertURL: alert.AlertURL["#cdata-section"],
-            impactedService: alert.ImpactedService?.Service?.map(service => {
+            impactedService: (alert.ImpactedService?.Service as RawService[])?.map(service => {
                 return {
                     serviceType: service.ServiceType as "T" | "B" | "R",
                     serviceTypeDescription: service.ServiceTypeDescription,
@@ -101,9 +104,10 @@ export const getActiveAlerts = async (options?: {
                     serviceId: service.ServiceId,
                     serviceBackColor: service.ServiceBackColor,
                     serviceTextColor: service.ServiceTextColor,
-                    serviceURL: service.ServiceURL["#cdata-section"],
+                    serviceURL: service.ServiceURL?.["#cdata-section"],
                 }
-            })
+            }),
+            guid: alert.GUID,
         } as Alert
     });
 }

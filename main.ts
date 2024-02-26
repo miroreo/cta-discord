@@ -1,14 +1,21 @@
 import * as db from "./db.ts";
-import {Discord, load} from "./deps.ts";
-import {updatePositions, getBadRunNumbers, outOfPlaceTrains, trainLineString} from './train_data.ts';
+import * as utils from "./utils.ts";
+import {Discord, loadEnv } from "./deps.ts";
+import {updatePositions, getBadRunNumbers, outOfPlaceTrains} from './train_data.ts';
 import {getActiveAlerts} from './service_alerts.ts';
 import {searchStations} from './stations.ts';
 import { TrainLine } from "./types.ts";
 import { Alert } from "./service_alerts.ts";
+import {Arrival, getArrivalsForStation} from './arrivals.ts';
+import { getStation } from "./stations.ts";
 
+const env = await loadEnv({export: true});
+const DISCORD_TOKEN = Deno.env.get("DISCORD_TOKEN");
 
-const env = await load();
-const DISCORD_TOKEN = env["DISCORD_TOKEN"];
+if(!DISCORD_TOKEN) {
+	console.error("No Discord token found in environment");
+	Deno.exit(1);
+}
 
 const bot = Discord.createBot({
   token: DISCORD_TOKEN,
@@ -19,14 +26,13 @@ const bot = Discord.createBot({
 		},
 		async interactionCreate(b, i) {
 			if (i.data?.name === "ping") {
-				await pushAlert("PONG!!!");
 				return await b.helpers.sendInteractionResponse(
 					i.id,
 					i.token,
 					{
 						type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
 						data: {
-							content: "Pong! Alerted!",
+							content: "Pong!",
 							flags: Discord.ApplicationCommandFlags.Ephemeral,
 						}
 					}
@@ -34,6 +40,28 @@ const bot = Discord.createBot({
 			}
 			trainDataHandler(b, i);
 			stationDataHandler(b, i);
+			if(i.data?.name === "broadcast_alert") {
+				if(i.user.id != 156126755646734336n) {
+					console.log(`Unauthorized user ${i.user.id.toString()} attempted to broadcast alert`);
+					return await b.helpers.sendInteractionResponse(i.id, i.token, {
+						type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
+						data: {
+							content: "You are not authorized to use this command.",
+							flags: Discord.ApplicationCommandFlags.Ephemeral,
+						}
+					})
+				}
+				const alert = i.data.options?.[0]?.value as string;
+				const subscribers = await db.getSubscribers();
+				subscribers.forEach(async (sub) => {
+					if(!sub.alertChannel) return;
+					b.helpers.sendMessage(sub.alertChannel, {
+						embeds: [{
+						}]
+					});
+				});
+			}
+
 		},
 
   },
@@ -158,6 +186,32 @@ const stationDataHandler = async (b: Discord.Bot, i: Discord.Interaction) => {
 			}
 		});
 	}
+	if(i.data?.name === "arrivals") {
+		const stationId = i.data.options?.[0]?.value as number;
+		const arrivals = await getArrivalsForStation(stationId);
+		return await b.helpers.sendInteractionResponse(i.id, i.token, {
+			type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
+			data: {
+				embeds: [{
+					title: `Arrivals at ${getStation(stationId)} (id: ${stationId})`,
+					color: 0x00a1de,
+					fields: arrivals?.map(a => {
+						return {
+							name: `${utils.trainLineString(a.route)} Line Train ${a.trainNumber} to ${a.destination.stationName}`,
+							value: `${getArrivalText(a)}`
+						}
+					})
+				}],
+			}
+		});
+	}
+}
+const getArrivalText = (arrival: Arrival): string => {
+	if(arrival.arrivalTime.getMinutes() - new Date(Date.now()).getMinutes()	 < 1) return "Due";
+	if(arrival.isApproaching) return "Due";
+	if(arrival.isScheduled) return "Scheduled <t:" + Math.floor(arrival.arrivalTime.valueOf()/1000) + ":R>";
+	if(arrival.isDelayed) return "Delayed";
+	return `<t:${Math.floor(arrival.predictionTime.valueOf()/1000)}:R>`;
 }
 const alerts_command = async (b: Discord.Bot, i: Discord.Interaction) => {
 	// check if subcommand is subscribe
@@ -342,14 +396,14 @@ const getBadRuns = async () => {
 	const badTrains = getBadRunNumbers(pos);
 	let response = "";
 	badTrains.forEach((train) => {
-		response = response + `${train.trainNumber} is a ${trainLineString(train.route)} Line train.\n`;
+		response = response + `${train.trainNumber} is a ${utils.trainLineString(train.route)} Line train.\n`;
 	});
 	if(badTrains.length === 0) {
 		response = "No trains have mismatched numbers!\n";
 	}
 	const outOfPlace = outOfPlaceTrains(pos);
 	outOfPlace.forEach(train => {
-		response = response + `${train.trainNumber} is out of place. ${trainLineString(train.route)} Line train approaching ${train.nextStation.stopName}\n`;
+		response = response + `${train.trainNumber} is out of place. ${utils.trainLineString(train.route)} Line train approaching ${train.nextStation?.stopName}\n`;
 	})
 	if(outOfPlace.length === 0) {
 		response = response + "No trains are out of place!\n";
@@ -362,7 +416,7 @@ const getBadRuns = async () => {
 			fields: [
 				{
 					name: "Line",
-					value: `${trainLineString(train.route)}`
+					value: `${utils.trainLineString(train.route)}`
 				},
 				{
 					name: "Next Stop",
@@ -382,7 +436,7 @@ const getBadRuns = async () => {
 			fields: [
 				{
 					name: "Line",
-					value: `${trainLineString(train.route)}`
+					value: `${utils.trainLineString(train.route)}`
 				},
 				{
 					name: "Next Stop",
@@ -463,4 +517,41 @@ bot.helpers.createGlobalApplicationCommand({
 		}
 	]
 })
+bot.helpers.createGlobalApplicationCommand({
+	name: "arrivals",
+	description: "Get train arrivals at a station",
+	type: Discord.ApplicationCommandTypes.ChatInput,
+	options: [
+		{
+			name: "station_id",
+			description: "The station id (can be found with the /search_stations command)",
+			type: Discord.ApplicationCommandOptionTypes.Integer,
+			required: false,
+		},
+	]
+})
+bot.helpers.createGuildApplicationCommand({
+	name: "broadcast_alert",
+	description: "Broadcast an alert to all subscribed servers",
+	type: Discord.ApplicationCommandTypes.ChatInput,
+	options: [
+		{
+			name: "alert",
+			description: "The alert to broadcast",
+			type: Discord.ApplicationCommandOptionTypes.String,
+			required: true
+		}
+	],
+	defaultMemberPermissions: ["ADMINISTRATOR"],
+}, "584874513750163476");
+
 await Discord.startBot(bot);
+await Discord.editBotStatus(bot, {
+	status: "online",
+	activities: [{
+		name: "CTA Trains",
+		type: Discord.ActivityTypes.Game,
+		createdAt: Date.now(),
+	}],
+});
+

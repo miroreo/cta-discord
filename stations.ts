@@ -4,12 +4,12 @@ import {StationStop, TrainLine} from './types.ts';
 
 export const stops: StationStop[] = _stops.map(s => {
     const stop: StationStop = {
-        stopID: parseInt(s.stop_id),
-        directionID: s.direction_id as "N" | "S" | "E" | "W",
+        stopId: parseInt(s.stop_id),
+        directionId: s.direction_id as "N" | "S" | "E" | "W",
         stopName: s.stop_name,
         stationName: s.station_name,
         stationDescriptiveName: s.station_descriptive_name,
-        mapID: parseInt(s.map_id),
+        mapId: parseInt(s.map_id),
         ADA: s.ada,
         lines: [],
         location: {
@@ -30,8 +30,13 @@ export const stops: StationStop[] = _stops.map(s => {
 })
 const stations: {idFromName: {[key: string]: number}, nameFromId: {[key: number]: string}} = _stations;
 
-export const getStop = (id: number) => {
-    return stops.find(s => s.stopID === id);
+export const getStop = (id: number): StationStop => {
+    return stops.find(s => s.stopId === id) || {
+        stationDescriptiveName: "Loop",
+        stationName: "Loop",
+        ADA: false,
+
+    } as StationStop;
 }
 
 export const stopHasLine = (id: number, line: TrainLine): boolean => {
@@ -39,6 +44,9 @@ export const stopHasLine = (id: number, line: TrainLine): boolean => {
     return stop?.lines.includes(line) || false;
 }
 
+export const getStation = (id: number) => {
+    return stations.nameFromId[id];
+}
 export const searchStations = (query: string): {id: number, name: string}[] => {
     let results: {id: number, name: string}[] = [];
     Object.keys(stations.idFromName).forEach(key => {
@@ -53,5 +61,5 @@ export const searchStations = (query: string): {id: number, name: string}[] => {
 }
 
 export const stopsAtStation = (id: number): StationStop[] => {
-    return stops.filter(s => s.mapID === id);
+    return stops.filter(s => s.mapId === id);
 }

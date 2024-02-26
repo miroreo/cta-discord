@@ -1,68 +1,14 @@
-import { load } from "./deps.ts";
 import { StationStop, TrainLine, TrainPosition } from './types.ts';
 import { CTATTResponse } from "./types.ts";
 import {getStop, stops} from './stations.ts';
+import { loadEnv } from "./deps.ts";
+import * as utils from "./utils.ts";
 
-const env = await load();
-const API_KEY = env["CTA_API_KEY"];
+await loadEnv({export: true});
+const API_KEY = Deno.env.get("CTA_API_KEY");
 
 const all_routes = "red,blue,brn,g,org,p,pink,y"
 const url = `http://lapi.transitchicago.com/api/1.0/ttpositions.aspx?key=${API_KEY}&rt=${all_routes}&outputType=JSON`;
-
-function getTrainLine(lineString: string) {
-    switch(lineString) {
-        case "red":
-            return TrainLine.RED;
-        case "blue":
-            return TrainLine.BLUE;
-        case "g":
-            return TrainLine.GREEN;
-        case "brn":
-            return TrainLine.BROWN;
-        case "p":
-            return TrainLine.PURPLE;
-        case "pexp":
-            return TrainLine.PURPLE_EXPRESS;
-        case "y":
-            return TrainLine.YELLOW;
-        case "pnk":
-            return TrainLine.PINK;
-        case "pink":
-            return TrainLine.PINK;
-        case "o":
-            return TrainLine.ORANGE;
-        case "org":
-            return TrainLine.ORANGE;
-        default:
-            return TrainLine.UNDEFINED
-    }
-
-}
-export function trainLineString(trainLine: TrainLine) {
-    switch(trainLine){
-        case TrainLine.RED:
-            return "Red";
-        case TrainLine.BLUE:
-            return "Blue";
-        case TrainLine.GREEN:
-            return "Green";
-        case TrainLine.BROWN:
-            return "Brown";
-        case TrainLine.PURPLE:
-            return "Purple";
-        case TrainLine.PURPLE_EXPRESS:
-            return "Purple Express";
-        case TrainLine.YELLOW:
-            return "Yellow";
-        case TrainLine.PINK:
-            return "Pink";
-        case TrainLine.ORANGE:
-            return "Orange";
-        case TrainLine.UNDEFINED:
-            return "Undefined";
-    }
-}
-
 
 let trainPositions: TrainPosition[] = [];
 
@@ -94,13 +40,14 @@ function translateCTATT(res: CTATTResponse) {
         trains: TrainPosition[]
     }[] = res.ctatt.route.map(line => {
         if(!line.train) 
-            return {line: getTrainLine(line["@name"]), trains: []};
-        if(!line.train.length) 
-            line.train = [line.train]; //@ts-ignore 
-        const trains: TrainPosition[] = line.train.map(train => {
+            return {line: utils.getTrainLine(line["@name"]), trains: []};
+        if(!Array.isArray(line.train)) 
+            line.train = (Array.from([line.train]) as Array<any>);
+        console.log(line.train);
+        const trains: TrainPosition[] = line.train?.map(train => {
             return {
                 trainNumber: parseInt(train.rn),
-                route: getTrainLine(line["@name"]),
+                route: utils.getTrainLine(line["@name"]),
                 destination: getStop(parseInt(train.destSt)),
                 nextStation: getStop(parseInt(train.nextStpId)),
                 predictionTime: new Date(train.prdt),
@@ -116,7 +63,7 @@ function translateCTATT(res: CTATTResponse) {
             } as TrainPosition
         })
         return {
-            line: getTrainLine(line["@name"]),
+            line: utils.getTrainLine(line["@name"]),
             trains,
         };
     });
@@ -126,11 +73,12 @@ export function outOfPlaceTrains(positions: TrainPosition[]) {
     let badTrains: TrainPosition[] = [];
 
     positions.forEach(train => {
+        if(!train.nextStation) return;
         if(train.nextStation.lines.indexOf(train.route) == -1) {
             if(train.route == TrainLine.PURPLE && train.nextStation.lines.indexOf(TrainLine.PURPLE_EXPRESS) != -1) return;
             badTrains.push(train);
             // console.log("⚠️ TRAIN OUT OF PLACE ⚠️");
-            // console.log(`🚇 ${trainLineString(train.route)} line train #${train.trainNumber}. Next Station ${train.nextStation.stopName}`);
+            // console.log(`🚇 ${utils.trainLineString(train.route)} line train #${train.trainNumber}. Next Station ${train.nextStation.stopName}`);
         }
     });
     return badTrains;
@@ -139,12 +87,13 @@ export function outOfPlaceTrains(positions: TrainPosition[]) {
 function checkForOutOfPlaceTrains() {
     let found = false;
     trainPositions.forEach(train => {
+        if(!train.nextStation) return;
         if(train.nextStation.lines.indexOf(train.route) == -1) {
             if(train.route == TrainLine.PURPLE && train.nextStation.lines.indexOf(TrainLine.PURPLE_EXPRESS) != -1)return;
             console.log(train.nextStation.lines)
             found = true;
             console.log("⚠️ TRAIN OUT OF PLACE ⚠️");
-            console.log(`🚇 ${trainLineString(train.route)} line train #${train.trainNumber}. Next Station ${train.nextStation.stopName}`);
+            console.log(`🚇 ${utils.trainLineString(train.route)} line train #${train.trainNumber}. Next Station ${train.nextStation.stopName}`);
         }
     });
     if(!found) console.log("✅ No trains out of place right now.")
@@ -191,7 +140,7 @@ function checkRunNumbers() {
         if(susNumber) {
             runIssue = true;
             console.log("⚠️ Run number mismatch detected ⚠️");
-            console.log(`🚇 Run ${train.trainNumber} is a ${trainLineString(train.route)} line train.`);
+            console.log(`🚇 Run ${train.trainNumber} is a ${utils.trainLineString(train.route)} line train.`);
         } 
     })
     if(!runIssue) console.log("✅ No run number mismatches detected right now.")
@@ -238,7 +187,7 @@ export function getBadRunNumbers(positions: TrainPosition[]) {
         if(susNumber) {
             badTrains.push(train);
             // console.log("⚠️ Run number mismatch detected ⚠️");
-            // console.log(`🚇 Run ${train.trainNumber} is a ${trainLineString(train.route)} line train.`);
+            // console.log(`🚇 Run ${train.trainNumber} is a ${utils.trainLineString(train.route)} line train.`);
         } 
     })
     return badTrains;
@@ -249,7 +198,7 @@ function checkDelays() {
         if(train.isDelayed) {
             delayFound = true;
             console.log("⚠️ Train Delayed ⚠️");
-            console.log(`🚇 ${trainLineString(train.route)} Line Train ${train.trainNumber} is delayed, its next station should be ${train.nextStation.stopName}`);
+            console.log(`🚇 ${utils.trainLineString(train.route)} Line Train ${train.trainNumber} is delayed, its next station should be ${train.nextStation?.stopName}`);
         }
     })
 }

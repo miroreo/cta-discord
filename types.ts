@@ -12,12 +12,12 @@ export enum TrainLine {
 }
 export type Routes = TrainLine[];
 export type StationStop = {
-    stopID: number;
-    directionID: "N" | "S" | "E" | "W";
+    stopId: number;
+    directionId: "N" | "S" | "E" | "W";
     stopName: string;
     stationName: string;
     stationDescriptiveName: string;
-    mapID: number;
+    mapId: number;
     ADA: boolean;
     lines: TrainLine[];
     location: {
@@ -29,7 +29,7 @@ export type TrainPosition = {
     trainNumber: number,
     route: TrainLine;
     destination: StationStop,
-    nextStation: StationStop,
+    nextStation?: StationStop,
     predictionTime: Date,
     arrivalTime: Date,
     isScheduled: boolean,
