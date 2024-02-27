@@ -37,10 +37,15 @@ const arrivalLineFont = {
   weight: "bold",
   anchor: "end"
 }
-export const generateArrivalsBoard = async (stopDescription: string, arrivals: Arrival[]) => {
-  
+
+export const generateArrivalsBoard = async (stopDescription: string, arrivals: Arrival[]) => {  
+  const numberOfArrivals = arrivals.length;
   arrivals = arrivals.slice(0, 8);
-  canvas.rect(1200, 900).fill('#1e1e1e').move(0,0);
+  let canvasHeight = 900;
+  if(numberOfArrivals < 8) {
+    canvasHeight = 65 + (numberOfArrivals * 105);
+  }
+  canvas.rect(1200, canvasHeight).fill('#1e1e1e').move(0,0);
   canvas.text(stopDescription)
     .move(25,30)
     .font({size: 25, weight: "bold"})
@@ -89,7 +94,7 @@ export const generateArrivalsBoard = async (stopDescription: string, arrivals: A
   });
   return await svg2png(canvas.svg(), {
     width: 1200,
-    height: 900,
+    height: canvasHeight,
     fonts: await Promise.all([
         Deno.readFile("./ttf/Helvetica.ttf"),
         Deno.readFile("./ttf/Helvetica-Bold.ttf"),
