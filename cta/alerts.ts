@@ -79,8 +79,10 @@ export const getActiveAlerts = async (options?: {
     return data.CTAAlerts.Alert.map(alert => {
         // console.log(alert);
         if(!Array.isArray(!alert.ImpactedService?.Service)) {
-            if(!alert.ImpactedService.Service) {
-                alert.ImpactedService.Service = [];
+            if(!alert.ImpactedService?.Service) {
+                alert.ImpactedService = {
+                  Service: []
+                };
             }
             else {
                 alert.ImpactedService.Service = [alert.ImpactedService.Service as RawService] as RawService[];
