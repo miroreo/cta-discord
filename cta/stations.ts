@@ -52,6 +52,8 @@ export const getStation = (id: number) => {
 }
 export const searchStations = (query: string): {id: number, name: string}[] => {
     let results: {id: number, name: string}[] = [];
+    if(stations.idFromName[query]) return [{id: stations.idFromName[query], name: query}];
+
     Object.keys(stations.idFromName).forEach(key => {
         if(key.toLowerCase().includes(query.toLowerCase())) {
             results.push({
