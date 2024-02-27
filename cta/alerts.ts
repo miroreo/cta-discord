@@ -21,7 +21,7 @@ type RawAlert = {
     MajorAlert: string,
     AlertURL: {"#cdata-section": string},
     ImpactedService: {
-        Service: RawService[] | RawService
+        Service?: RawService[] | RawService
     },
     ttim: string,
     GUID: string,
@@ -79,7 +79,12 @@ export const getActiveAlerts = async (options?: {
     return data.CTAAlerts.Alert.map(alert => {
         // console.log(alert);
         if(!Array.isArray(!alert.ImpactedService?.Service)) {
-            alert.ImpactedService.Service = [alert.ImpactedService.Service as RawService] as RawService[];
+            if(!alert.ImpactedService.Service) {
+                alert.ImpactedService.Service = [];
+            }
+            else {
+                alert.ImpactedService.Service = [alert.ImpactedService.Service as RawService] as RawService[];
+            }
         }
         
         return {
