@@ -1,13 +1,12 @@
-import { loadEnv, log } from "./deps.ts";
-import * as utils from "./utils.ts";
-import { stops } from "./stations.ts";
-import { getStop } from "./stations.ts";
-import { TrainPosition } from "./types.ts";
-import { initLog, discordLog } from "./logging.ts";
+import { loadEnv, log } from "../deps.ts";
+import * as utils from "../utils.ts";
+import { stops, searchStations } from "./stations.ts";
+import { getStop, getStopByName } from "./stations.ts";
+import { StationStop, TrainPosition } from "../types.ts";
+import { initLog, discordLog } from "../logging.ts";
 
-initLog();
+// initLog();
 
-await loadEnv({export: true});
 try {
 	await utils.ensureEnvs(["CTA_API_KEY"]);
 } catch(error) {
@@ -56,15 +55,13 @@ export type Arrival = TrainPosition &  {
     isFaulted: boolean,
 }
 const parseArrival = (raw: RawArrival): Arrival => {
+    
+    const destination = getStop(parseInt(raw.destSt)) || getStopByName(raw.destNm);
     // console.log(raw);
     return {
         trainNumber: parseInt(raw.rn),
         route: utils.getTrainLine(raw.rt),
-        destination: getStop(parseInt(raw.destSt)) || {
-            stationName: "Loop",
-            stationDescriptiveName: "Loop",
-            
-        },
+        destination,
         predictionTime: new Date(raw.prdt),
         arrivalTime: new Date(raw.arrT),
         isScheduled: raw.isSch === "1",
@@ -89,8 +86,16 @@ export const getArrivalsForStation = async (stationId: number): Promise<Arrival[
     const data: CTAArrivalsResponse = await response.json();
     if(parseInt(data.ctatt.errCd) !== 0) {
         discordLog.error(`Unknown API Error: ${data.ctatt.errNm} for station ${stationId}`);
-        // throw new Error(data.ctatt.errNm || "Unknown API Error");
     }
     return data.ctatt.eta.map(parseArrival);
 }
 
+export const getArrivalsForStop = async (stopId: number): Promise<Arrival[]> => {
+    const url = `http://lapi.transitchicago.com/api/1.0/ttarrivals.aspx?key=${CTA_API_KEY}&stpid=${stopId}&outputType=JSON`;
+    const response = await fetch(url);
+    const data: CTAArrivalsResponse = await response.json();
+    if(parseInt(data.ctatt.errCd) !== 0) {
+        discordLog.error(`Unknown API Error: ${data.ctatt.errNm} for station ${stopId}`);
+    }
+    return data.ctatt.eta.map(parseArrival);
+}

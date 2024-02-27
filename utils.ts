@@ -54,7 +54,30 @@ export function trainLineString(trainLine: TrainLine) {
       return "Undefined";
   }
 }
-
+export const lineColor = (line: TrainLine) => {
+	switch(line) {
+		case TrainLine.BLUE:
+			return 0x00a1de;
+		case TrainLine.RED:
+			return 0xc60c30;
+		case TrainLine.GREEN:
+			return 0x009b3a;
+		case TrainLine.ORANGE:
+			return 0xf9461c;
+		case TrainLine.YELLOW:
+			return 0xf9e300;
+		case TrainLine.PURPLE:
+			return 0x522398;
+		case TrainLine.BROWN:
+			return 0x62361b;
+		case TrainLine.PURPLE_EXPRESS:
+			return 0x522398;
+		case TrainLine.PINK:
+			return 0xe27ea6;
+		default:
+			return 0x000000;
+	}
+}
 export async function ensureEnvs(envs: string[]) {
   await loadEnv({export: true});
   for (const env of envs) {

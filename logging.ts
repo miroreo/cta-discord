@@ -1,5 +1,7 @@
 import { log } from "./deps.ts";
+import * as utils from "./utils.ts";
 
+await utils.ensureEnvs(["LOGGING_WEBHOOK"]);
 interface DiscordLogHandlerOptions extends log.BaseHandlerOptions {
     webhookUrl: string;
     loggerName: string;
@@ -38,7 +40,7 @@ export class DiscordLogHandler extends log.BaseHandler {
         const color = this.getColor(level);
         const errorContent = msg.split(" ").slice(1).join(" ");
 
-        if(!this.webhookUrl) return console.log(msg);
+        // if(!this.webhookUrl) return console.log(msg);
         fetch(this.webhookUrl, {
             method: "POST",
             headers: {
@@ -74,4 +76,5 @@ export const initLog = () => log.setup({
         }
     }
 });
+initLog();
 export const discordLog = log.getLogger("errors");

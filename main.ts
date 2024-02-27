@@ -1,14 +1,15 @@
 import * as db from "./db.ts";
 import * as utils from "./utils.ts";
 import {Discord, loadEnv, log} from "./deps.ts";
-import {updatePositions, getBadRunNumbers, outOfPlaceTrains} from './train_data.ts';
-import {getActiveAlerts} from './service_alerts.ts';
-import {searchStations} from './stations.ts';
+import {updatePositions, getBadRunNumbers, outOfPlaceTrains} from './cta/positions.ts';
+import {getActiveAlerts} from './cta/alerts.ts';
+import {searchStations} from './cta/stations.ts';
 import { TrainLine } from "./types.ts";
-import { Alert } from "./service_alerts.ts";
-import {Arrival, getArrivalsForStation} from './arrivals.ts';
-import { getStation } from "./stations.ts";
+import { Alert } from "./cta/alerts.ts";
+import {Arrival, getArrivalsForStation} from './cta/arrivals.ts';
+import { getStation } from "./cta/stations.ts";
 import {initLog, discordLog} from "./logging.ts";
+import { arrivalsForStation, stopArrivals} from "./bot/arrivals.ts";
 
 initLog();
 discordLog.debug("Bot Starting...");
@@ -26,8 +27,8 @@ const bot = Discord.createBot({
   token: DISCORD_TOKEN,
   intents: Discord.Intents.Guilds | Discord.Intents.GuildMessages | Discord.Intents.MessageContent,
   events: {
-		ready() {
-			log.info("Successfully connected to gateway");
+	ready() {
+		log.info("Successfully connected to gateway");
 		},
 		async interactionCreate(b, i) {
 			if (i.data?.name === "ping") {
@@ -59,12 +60,24 @@ const bot = Discord.createBot({
 				}
 				const alert = i.data.options?.[0]?.value as string;
 				const subscribers = await db.getSubscribers();
-				subscribers.forEach(async (sub) => {
-					if(!sub.alertChannel) return;
-					b.helpers.sendMessage(sub.alertChannel, {
-						embeds: [{
-						}]
+				try {
+					subscribers.forEach(async (sub) => {
+						if(!sub.alertChannel) return;
+						b.helpers.sendMessage(sub.alertChannel, {
+							embeds: [{
+								title: "Alert",
+								description: alert,
+							}]
+						});
 					});
+				} catch (err) {
+					discordLog.error(err);
+				}
+				return await b.helpers.sendInteractionResponse(i.id, i.token, {
+					type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
+					data: {
+						content: `Alert broadcast to ${subscribers.length} servers.`
+					}
 				});
 			}
 
@@ -78,31 +91,6 @@ bot.gateway.manager.gatewayConfig.properties = {
 	os: "Discordeno",
 	browser: "Discord iOS",
 	device: "Discordeno",
-}
-
-const lineColor = (line: TrainLine) => {
-	switch(line) {
-		case TrainLine.BLUE:
-			return 0x00a1de;
-		case TrainLine.RED:
-			return 0xc60c30;
-		case TrainLine.GREEN:
-			return 0x009b3a;
-		case TrainLine.ORANGE:
-			return 0xf9461c;
-		case TrainLine.YELLOW:
-			return 0xf9e300;
-		case TrainLine.PURPLE:
-			return 0x522398;
-		case TrainLine.BROWN:
-			return 0x62361b;
-		case TrainLine.PURPLE_EXPRESS:
-			return 0x522398;
-		case TrainLine.PINK:
-			return 0xe27ea6;
-		default:
-			return 0x000000;
-	}
 }
 
 const trainDataHandler = async (b: Discord.Bot, i: Discord.Interaction) => {
@@ -166,6 +154,7 @@ const trainDataHandler = async (b: Discord.Bot, i: Discord.Interaction) => {
 
 }
 const stationDataHandler = async (b: Discord.Bot, i: Discord.Interaction) => {
+	const MAX_RESULTS = 25;
 	if(i.data?.name === "search_stations") {
 		const query = i.data.options?.[0]?.value as string;
 		const stations = searchStations(query);
@@ -195,7 +184,16 @@ const stationDataHandler = async (b: Discord.Bot, i: Discord.Interaction) => {
 	}
 	if(i.data?.name === "arrivals") {
 		const stationId = i.data.options?.[0]?.value as number;
-		const arrivals = await getArrivalsForStation(stationId);
+		let arrivals = await getArrivalsForStation(stationId);
+		console.log(arrivals);
+		if(arrivals.length > MAX_RESULTS) {
+			let shortenedArrivals = [];
+			arrivals.sort((a, b) => a.arrivalTime.valueOf() - b.arrivalTime.valueOf());
+			for(let i = 0; i < MAX_RESULTS; i++) {
+				shortenedArrivals.push(arrivals[i]);
+			}
+			arrivals = shortenedArrivals;
+		}
 		return await b.helpers.sendInteractionResponse(i.id, i.token, {
 			type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
 			data: {
@@ -212,13 +210,24 @@ const stationDataHandler = async (b: Discord.Bot, i: Discord.Interaction) => {
 			}
 		});
 	}
+	if(i.data?.name === "station_arrivals") {
+		arrivalsForStation(b, i);
+	}
+	if(i.data?.name === "stop_arrivals") {
+		stopArrivals(b, i);
+	}
 }
 const getArrivalText = (arrival: Arrival): string => {
-	if(arrival.arrivalTime.getMinutes() - new Date(Date.now()).getMinutes()	 < 1) return "Due";
-	if(arrival.isApproaching) return "Due";
-	if(arrival.isScheduled) return "Scheduled <t:" + Math.floor(arrival.arrivalTime.valueOf()/1000) + ":R>";
-	if(arrival.isDelayed) return "Delayed";
-	return `<t:${Math.floor(arrival.predictionTime.valueOf()/1000)}:R>`;
+	let returnVal = "";
+	if(new Date(arrival.arrivalTime.valueOf() - Date.now()).getMinutes()	 <= 2 || arrival.isApproaching) {
+		console.log(arrival);
+		returnVal = "Due";
+	}
+	// if(arrival.isScheduled) return "Scheduled <t:" + Math.floor(arrival.arrivalTime.valueOf()/1000) + ":R>";
+	else if(arrival.isDelayed) returnVal = "Delayed";
+	else returnVal = `<t:${Math.floor(arrival.arrivalTime.valueOf()/1000)}:R>`;
+	if(arrival.isScheduled) returnVal = returnVal + " (Scheduled)";
+	return returnVal
 }
 const alerts_command = async (b: Discord.Bot, i: Discord.Interaction) => {
 	log.info(`Received alerts command from ${i.user.username}#${i.user.discriminator} (${i.user.id})`);
@@ -274,7 +283,12 @@ const subscribe_alerts = async (b: Discord.Bot, i: Discord.Interaction) => {
 				guildName: (await b.helpers.getGuild(i.guildId)).name,
 			}
 		}
-		const channelId = BigInt(i.data?.options?.[0]?.options?.[0]?.value as string) || i.channelId;
+		let channelId;
+		if(i.data?.options?.[0]?.options?.[0]?.value as string) {
+			channelId = BigInt(i.data?.options?.[0]?.options?.[0]?.value as string);
+		} else {
+			channelId = i.channelId;
+		}
 		if(!channelId || typeof channelId !== "bigint") return await b.helpers.sendInteractionResponse(i.id, i.token, {
 			type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
 			data: {
@@ -296,6 +310,15 @@ const subscribe_alerts = async (b: Discord.Bot, i: Discord.Interaction) => {
 			guildName: guild.guildName,
 			hasAlerts: true,
 			alertChannel: channelId
+		}).catch(async e => {
+			discordLog.error(`Error Setting Guild: ${e}`);
+			return await b.helpers.sendInteractionResponse(i.id, i.token, {
+				type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
+				data: {
+					content: "An unknown error occurred.",
+					flags: Discord.ApplicationCommandFlags.Ephemeral,
+				}
+			})
 		});
 		return await b.helpers.sendInteractionResponse(i.id, i.token, {
 			type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
@@ -419,7 +442,7 @@ const getBadRuns = async () => {
 	response = response + `Updated: <t:${Math.floor(Date.now() / 1000)}:R>\n`
 	const embeds = badTrains?.map(train => {
 		return {
-			color: lineColor(train.route),
+			color: utils.lineColor(train.route),
 			title: `Train ${train.trainNumber}`,
 			fields: [
 				{
@@ -428,7 +451,7 @@ const getBadRuns = async () => {
 				},
 				{
 					name: "Next Stop",
-					value: `${train.nextStation.stopName}`,
+					value: `${train.nextStation?.stopName}`,
 				},
 				{
 					name: "Destination",
@@ -439,7 +462,7 @@ const getBadRuns = async () => {
 		} as Discord.Embed
 	}).concat(outOfPlace.map(train => {
 		return {
-			color: lineColor(train.route),
+			color: utils.lineColor(train.route),
 			title: `Train ${train.trainNumber}`,
 			fields: [
 				{
@@ -538,7 +561,34 @@ bot.helpers.createGlobalApplicationCommand({
 			required: false,
 		},
 	]
-})
+});
+bot.helpers.createGlobalApplicationCommand({
+	name: "station_arrivals",
+	description: "Get train arrivals at a station",
+	type: Discord.ApplicationCommandTypes.ChatInput,
+	options: [
+		{
+			name: "station",
+			description: "The station to get arrivals for",
+			type: Discord.ApplicationCommandOptionTypes.String,
+			required: true,
+		}
+	]
+});
+bot.helpers.createGlobalApplicationCommand({
+	name: "stop_arrivals",
+	description: "Get train arrivals at a stop",
+	type: Discord.ApplicationCommandTypes.ChatInput,
+	options: [
+		{
+			name: "stop",
+			description: "The stop to get arrivals for",
+			type: Discord.ApplicationCommandOptionTypes.Integer,
+			required: true,
+		}
+	]
+});
+
 bot.helpers.createGuildApplicationCommand({
 	name: "broadcast_alert",
 	description: "Broadcast an alert to all subscribed servers",
@@ -559,7 +609,7 @@ await Discord.editBotStatus(bot, {
 	status: "online",
 	activities: [{
 		name: "CTA Trains",
-		type: Discord.ActivityTypes.Game,
+		type: Discord.ActivityTypes.Watching,
 		createdAt: Date.now(),
 	}],
 });

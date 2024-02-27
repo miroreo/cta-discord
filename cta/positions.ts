@@ -1,8 +1,8 @@
-import { StationStop, TrainLine, TrainPosition } from './types.ts';
-import { CTATTResponse } from "./types.ts";
+import { StationStop, TrainLine, TrainPosition } from '../types.ts';
+import { CTATTResponse } from "../types.ts";
 import {getStop, stops} from './stations.ts';
-import { loadEnv, log } from "./deps.ts";
-import * as utils from "./utils.ts";
+import { loadEnv, log } from "../deps.ts";
+import * as utils from "../utils.ts";
 
 try {
 	await utils.ensureEnvs(["CTA_API_KEY"]);

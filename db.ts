@@ -1,13 +1,13 @@
 import { PostgresClient, loadEnv } from "./deps.ts";
 import * as utils from "./utils.ts";
 import { log } from "./deps.ts";
-import { initLog } from "./logging.ts";
+import { initLog, discordLog } from "./logging.ts";
 
 initLog();
 try {
 	await utils.ensureEnvs(["PSQL_USER", "PSQL_DB", "PSQL_HOST", "PSQL_PASS", "PSQL_PORT"]);
 } catch(error) {
-	log.getLogger("errors").error(error);
+	discordLog.error(error);
 	Deno.exit(1);
 }
 
@@ -78,11 +78,14 @@ export const getGuild = async (id: bigint): Promise<DiscordGuild | null> => {
 export const setGuild = async (guild: DiscordGuild) => {
     await client.queryArray({
         text: `INSERT INTO guilds (guild_id, guild_name, has_alerts, alert_channel) 
-                VALUES ($1, $2, $3, $4, $5, $6) 
+                VALUES ($1, $2, $3, $4) 
                 ON CONFLICT (guild_id) 
                 DO UPDATE SET has_alerts = $3, alert_channel = $4`,
         args: [guild.guildId, guild.guildName, guild.hasAlerts, guild.alertChannel]
-    });
+    }).catch(error => {
+        // discordLog.error(`Error pushing guild to database: ${error}`);
+        throw new Error("Error pushing guild to database");
+    })
 }
 
 export const getKV = async (key: string): Promise<string | null> => {
@@ -104,13 +107,17 @@ export const subscribeToAlerts = async (guildID: bigint, channelID: bigint) => {
     await client.queryArray({
         text: `UPDATE guilds SET has_alerts = true, alert_channel = $1 WHERE guild_id = $2`,
         args: [channelID, guildID]
+    }).catch(error => {
+        discordLog.error("Error pushing updated guild to database", error);
     });
 }
 export const unsubscribeFromAlerts = async (guildID: bigint) => {
     await client.queryArray({
         text: `UPDATE guilds SET has_alerts = false, alert_channel = NULL WHERE guild_id = $1`,
         args: [guildID]
-    });
+    }).catch(error => {
+        discordLog.error("Error pushing updated guild to database", error);
+    })
 }
 
 export const getSubscribers = async (): Promise<DiscordGuild[]> => {
@@ -141,5 +148,7 @@ export const pushAlertToDatabase = async (alert: AlertRecord) => {
     await client.queryArray({
         text: `INSERT INTO alert_history (alert_id, published_to, headline, short_description, guid) VALUES ($1, $2, $3, $4, $5)`,
         args: [alert.alertId, alert.publishedTo, alert.headline, alert.shortDescription, alert.guid]
-    });
+    }).catch(error => {
+        discordLog.error("Error pushing alert to database", error);
+    })
 }
