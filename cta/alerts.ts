@@ -1,3 +1,5 @@
+import { discordLog } from "../logging.ts";
+
 type CTAAlerts = {
     CTAAlerts: {
         TimeStamp: string,
@@ -67,7 +69,8 @@ export const getActiveAlerts = async (options?: {
     routes?: string[],
     recentDays?: number,
 }) => {
-    const url = `https://www.transitchicago.com/api/1.0/alerts.aspx?outputType=JSON&activeonly=true&accessibility=${options?.accessibility ? "true" : "false"}&planned=${options?.planned ? "true" : "false"}&routeid=${options?.routes?.join(',')}`;
+    try {
+        const url = `https://www.transitchicago.com/api/1.0/alerts.aspx?outputType=JSON&activeonly=true&accessibility=${options?.accessibility ? "true" : "false"}&planned=${options?.planned ? "true" : "false"}&routeid=${options?.routes?.join(',')}`;
     const response = await fetch(url);
     const data: CTAAlerts = await response.json();
     if(parseInt(data.CTAAlerts.ErrorCode) == 50) {
@@ -117,6 +120,9 @@ export const getActiveAlerts = async (options?: {
             guid: alert.GUID,
         } as Alert
     });
+    } catch (error) {
+        discordLog.error(error);
+    }
 }
 
 const all_L_lines = ["red","blue","g","brn","p","y","pink","org"];

@@ -32,11 +32,6 @@ tracking.path("M12.8,18C12.8,12.1,8,7.3,2.1,7.2l0,0c-0.3,0-0.6-0.1-0.7-0.4l0,0c-
 // const clock = canvas.symbol();
 // clock.rect(100, 100).fill("#FFF").radius(10);
 
-const arrivalLineFont = {
-  size: 48,
-  weight: "bold",
-  anchor: "end"
-}
 
 export const generateArrivalsBoard = async (stopDescription: string, arrivals: Arrival[]) => {  
   const numberOfArrivals = arrivals.length;

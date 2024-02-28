@@ -81,7 +81,7 @@ export const lineColor = (line: TrainLine) => {
 export async function ensureEnvs(envs: string[]) {
   await loadEnv({export: true});
   for (const env of envs) {
-    if (!Deno.env.get(env)) {
+    if (!Deno.env.has(env)) {
       log.getLogger("errors").error(`Environment variable ${env} is not set.`);
       throw new Error(`Environment variable ${env} is not set.`);
     }
