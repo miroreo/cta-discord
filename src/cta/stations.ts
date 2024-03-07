@@ -1,6 +1,6 @@
 import _stops from './stops.json' assert { type: "json" };
 import _stations from './stations.json' assert { type: "json" };
-import {StationStop, TrainLine} from '../types.ts';
+import {StationStop, TrainLine} from '../../types.ts';
 
 export const stops: StationStop[] = _stops.map(s => {
     const stop: StationStop = {

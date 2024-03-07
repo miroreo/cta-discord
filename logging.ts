@@ -1,5 +1,5 @@
 import { log } from "./deps.ts";
-import * as utils from "./utils.ts";
+import * as utils from "./src/utils.ts";
 
 await utils.ensureEnvs(["LOGGING_WEBHOOK"]);
 interface DiscordLogHandlerOptions extends log.BaseHandlerOptions {

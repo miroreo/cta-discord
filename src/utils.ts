@@ -1,5 +1,8 @@
-import { Discord, loadEnv, log } from "./deps.ts";
-import { TrainLine } from './types.ts';
+import { Discord, loadEnv, log as log_} from "../deps.ts";
+import { TrainLine } from '../types.ts';
+import { discordLog, initLog } from "../logging.ts";
+
+export const startTime = Date.now();
 
 export function getTrainLine(lineString: string) {
   lineString = lineString.toLowerCase();
@@ -79,30 +82,25 @@ export const lineColor = (line: TrainLine) => {
 	}
 }
 export async function ensureEnvs(envs: string[]) {
-  await loadEnv({export: true});
+  const config = await loadEnv({export: true});
   for (const env of envs) {
     if (!Deno.env.has(env)) {
-      log.getLogger("errors").error(`Environment variable ${env} is not set.`);
+      log.error(`Environment variable ${env} is not set.`);
       throw new Error(`Environment variable ${env} is not set.`);
     }
   }
+  return config;
 }
+initLog();
+export const log = {
+  info: (message: string) => {
+    log_.info(message);
+  },
+  warn: (message: string) => {
+    discordLog.warn(message);
 
-export function sendErrorMessage(level: string, message: string) {
-  fetch(Deno.env.get("LOGGING_WEBHOOK")!, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      content: message,
-      username: "cta-discord-bot ERROR",
-      embeds: [
-        {
-          title: level,
-          description: message,
-        }
-      ]
-    }),
-  });
+  },
+  error: (message: string) => {
+    discordLog.error(message);
+  }
 }

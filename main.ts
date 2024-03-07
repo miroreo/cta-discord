@@ -1,15 +1,15 @@
 import * as db from "./db.ts";
-import * as utils from "./utils.ts";
+import * as utils from "./src/utils.ts";
 import {Discord, loadEnv, log} from "./deps.ts";
-import {updatePositions, getBadRunNumbers, outOfPlaceTrains} from './cta/positions.ts';
-import {getActiveAlerts} from './cta/alerts.ts';
-import {searchStations} from './cta/stations.ts';
+import {updatePositions, getBadRunNumbers, outOfPlaceTrains} from './src/cta/positions.ts';
+import {getActiveAlerts} from './src/cta/alerts.ts';
+import {searchStations} from './src/cta/stations.ts';
 import { TrainLine } from "./types.ts";
-import { Alert } from "./cta/alerts.ts";
-import {Arrival, getArrivalsForStation} from './cta/arrivals.ts';
-import { getStation } from "./cta/stations.ts";
+import { Alert } from "./src/cta/alerts.ts";
+import {Arrival, getArrivalsForStation} from './src/cta/arrivals.ts';
+import { getStation } from "./src/cta/stations.ts";
 import {initLog, discordLog} from "./logging.ts";
-import { arrivalsForStation, stopArrivals} from "./bot/arrivals.ts";
+import { arrivalsForStation, stopArrivals} from "./src/bot/arrivals.ts";
 
 initLog();
 discordLog.debug("Bot Starting...");
@@ -47,39 +47,39 @@ const bot = Discord.createBot({
 			}
 			trainDataHandler(b, i);
 			stationDataHandler(b, i);
-			if(i.data?.name === "broadcast_alert") {
-				if(i.user.id != 156126755646734336n) {
-					log.getLogger("errors").error(`Unauthorized user ${i.user.id.toString()} attempted to broadcast alert`);
-					return await b.helpers.sendInteractionResponse(i.id, i.token, {
-						type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
-						data: {
-							content: "You are not authorized to use this command.",
-							flags: Discord.ApplicationCommandFlags.Ephemeral,
-						}
-					})
-				}
-				const alert = i.data.options?.[0]?.value as string;
-				const subscribers = await db.getSubscribers();
-				try {
-					subscribers.forEach(async (sub) => {
-						if(!sub.alertChannel) return;
-						b.helpers.sendMessage(sub.alertChannel, {
-							embeds: [{
-								title: "Alert",
-								description: alert,
-							}]
-						});
-					});
-				} catch (err) {
-					discordLog.error(err);
-				}
-				return await b.helpers.sendInteractionResponse(i.id, i.token, {
-					type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
-					data: {
-						content: `Alert broadcast to ${subscribers.length} servers.`
-					}
-				});
-			}
+			// if(i.data?.name === "broadcast_alert") {
+			// 	if(i.user.id != 156126755646734336n) {
+			// 		log.getLogger("errors").error(`Unauthorized user ${i.user.id.toString()} attempted to broadcast alert`);
+			// 		return await b.helpers.sendInteractionResponse(i.id, i.token, {
+			// 			type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
+			// 			data: {
+			// 				content: "You are not authorized to use this command.",
+			// 				flags: Discord.ApplicationCommandFlags.Ephemeral,
+			// 			}
+			// 		})
+			// 	}
+			// 	const alert = i.data.options?.[0]?.value as string;
+			// 	const subscribers = await db.getSubscribers();
+			// 	try {
+			// 		subscribers.forEach(async (sub) => {
+			// 			if(!sub.alertChannel) return;
+			// 			b.helpers.sendMessage(sub.alertChannel, {
+			// 				embeds: [{
+			// 					title: "Alert",
+			// 					description: alert,
+			// 				}]
+			// 			});
+			// 		});
+			// 	} catch (err) {
+			// 		discordLog.error(err);
+			// 	}
+			// 	return await b.helpers.sendInteractionResponse(i.id, i.token, {
+			// 		type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
+			// 		data: {
+			// 			content: `Alert broadcast to ${subscribers.length} servers.`
+			// 		}
+			// 	});
+			// }
 
 		},
 
@@ -124,9 +124,6 @@ const trainDataHandler = async (b: Discord.Bot, i: Discord.Interaction) => {
 				}
 			}
 		);
-	}
-	if(i.data?.name === "alerts") {
-		alerts_command(b, i);
 	}
 	if(i.data?.customId === "getbadruns_refresh") {
 		const {response, embeds} = await getBadRuns();
@@ -182,40 +179,40 @@ const stationDataHandler = async (b: Discord.Bot, i: Discord.Interaction) => {
 			}
 		});
 	}
-	if(i.data?.name === "arrivals") {
-		const stationId = i.data.options?.[0]?.value as number;
-		let arrivals = await getArrivalsForStation(stationId);
-		console.log(arrivals);
-		if(arrivals.length > MAX_RESULTS) {
-			let shortenedArrivals = [];
-			arrivals.sort((a, b) => a.arrivalTime.valueOf() - b.arrivalTime.valueOf());
-			for(let i = 0; i < MAX_RESULTS; i++) {
-				shortenedArrivals.push(arrivals[i]);
-			}
-			arrivals = shortenedArrivals;
-		}
-		return await b.helpers.sendInteractionResponse(i.id, i.token, {
-			type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
-			data: {
-				embeds: [{
-					title: `Arrivals at ${getStation(stationId)} (id: ${stationId})`,
-					color: 0x00a1de,
-					fields: arrivals?.map(a => {
-						return {
-							name: `${utils.trainLineString(a.route)} Line Train ${a.trainNumber} to ${a.destination.stationName}`,
-							value: `${getArrivalText(a)}`
-						}
-					})
-				}],
-			}
-		});
-	}
-	if(i.data?.name === "station_arrivals") {
-		arrivalsForStation(b, i);
-	}
-	if(i.data?.name === "stop_arrivals") {
-		stopArrivals(b, i);
-	}
+	// if(i.data?.name === "arrivals") {
+	// 	const stationId = i.data.options?.[0]?.value as number;
+	// 	let arrivals = await getArrivalsForStation(stationId);
+	// 	console.log(arrivals);
+	// 	if(arrivals.length > MAX_RESULTS) {
+	// 		let shortenedArrivals = [];
+	// 		arrivals.sort((a, b) => a.arrivalTime.valueOf() - b.arrivalTime.valueOf());
+	// 		for(let i = 0; i < MAX_RESULTS; i++) {
+	// 			shortenedArrivals.push(arrivals[i]);
+	// 		}
+	// 		arrivals = shortenedArrivals;
+	// 	}
+	// 	return await b.helpers.sendInteractionResponse(i.id, i.token, {
+	// 		type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
+	// 		data: {
+	// 			embeds: [{
+	// 				title: `Arrivals at ${getStation(stationId)} (id: ${stationId})`,
+	// 				color: 0x00a1de,
+	// 				fields: arrivals?.map(a => {
+	// 					return {
+	// 						name: `${utils.trainLineString(a.route)} Line Train ${a.trainNumber} to ${a.destination.stationName}`,
+	// 						value: `${getArrivalText(a)}`
+	// 					}
+	// 				})
+	// 			}],
+	// 		}
+	// 	});
+	// }
+	// if(i.data?.name === "station_arrivals") {
+	// 	arrivalsForStation(b, i);
+	// }
+	// if(i.data?.name === "stop_arrivals") {
+	// 	stopArrivals(b, i);
+	// }
 }
 const getArrivalText = (arrival: Arrival): string => {
 	let returnVal = "";
@@ -229,150 +226,10 @@ const getArrivalText = (arrival: Arrival): string => {
 	if(arrival.isScheduled) returnVal = returnVal + " (Scheduled)";
 	return returnVal
 }
-const alerts_command = async (b: Discord.Bot, i: Discord.Interaction) => {
-	log.info(`Received alerts command from ${i.user.username}#${i.user.discriminator} (${i.user.id})`);
-	// check if subcommand is subscribe
-	if(i.data?.options?.[0]?.name === "subscribe") {
-		subscribe_alerts(b, i);
-	}
-	if(i.data?.options?.[0]?.name === "unsubscribe") {
-		unsubscribe_alerts(b, i);
-	}
-	if(i.data?.options?.[0]?.name === "list") {
-		const activeAlerts = await getActiveAlerts({planned: true, accessibility: false, routes: ["red","blue","g","brn","p","y","pink","org"]});
-		if(activeAlerts.length === 0) {
-			return await b.helpers.sendInteractionResponse(i.id, i.token, {
-				type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
-				data: {
-					content: "No active alerts",
-					flags: Discord.ApplicationCommandFlags.Ephemeral,
-				}
-			});
-		}
-		let response = `Active Alerts:\n`;
-		activeAlerts.forEach(alert => {
-			response = response + `**${alert.headline}**\n${alert.shortDescription}\n`;
-		});
-		return await b.helpers.sendInteractionResponse(i.id, i.token, {
-			type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
-			data: {
-				content: response,
-				flags: Discord.ApplicationCommandFlags.Ephemeral,
-			}
-		});
-	
-	}
-};
-const subscribe_alerts = async (b: Discord.Bot, i: Discord.Interaction) => {
-	if(!i.member?.permissions || !i.guildId) {
-		return await b.helpers.sendInteractionResponse(i.id, i.token, {
-			type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
-			data: {
-				content: "You must be in a server to use this command.",
-				flags: Discord.ApplicationCommandFlags.Ephemeral,
-			}
-		});
-	}
-	if(Discord.calculatePermissions(i.member?.permissions || BigInt(0)).includes("MANAGE_GUILD")) {
-		let guild = await db.getGuild(i.guildId);
-		if(!guild) {
-			log.info(`Guild ${i.guildId} not found in database. Creating new guild entry.`);
-			// console.log("Guild not found. Creating new guild entry.");
-			guild = {
-				guildId: i.guildId,
-				guildName: (await b.helpers.getGuild(i.guildId)).name,
-			}
-		}
-		let channelId;
-		if(i.data?.options?.[0]?.options?.[0]?.value as string) {
-			channelId = BigInt(i.data?.options?.[0]?.options?.[0]?.value as string);
-		} else {
-			channelId = i.channelId;
-		}
-		if(!channelId || typeof channelId !== "bigint") return await b.helpers.sendInteractionResponse(i.id, i.token, {
-			type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
-			data: {
-				content: "Error: You must specify a channel to send alerts to.",
-				flags: Discord.ApplicationCommandFlags.Ephemeral,
-			}
-		});
-		if(guild.hasAlerts) {
-			return await b.helpers.sendInteractionResponse(i.id, i.token, {
-				type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
-				data: {
-					content: `Already subscribed to alerts. Alerts will be sent to <#${guild.alertChannel}>`,
-					flags: Discord.ApplicationCommandFlags.Ephemeral,
-				}
-			})
-		}
-		await db.setGuild({
-			guildId: i.guildId,
-			guildName: guild.guildName,
-			hasAlerts: true,
-			alertChannel: channelId
-		}).catch(async e => {
-			discordLog.error(`Error Setting Guild: ${e}`);
-			return await b.helpers.sendInteractionResponse(i.id, i.token, {
-				type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
-				data: {
-					content: "An unknown error occurred.",
-					flags: Discord.ApplicationCommandFlags.Ephemeral,
-				}
-			})
-		});
-		return await b.helpers.sendInteractionResponse(i.id, i.token, {
-			type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
-			data: {
-				content: `Subscribed to alerts. Alerts will be sent to <#${channelId}>`,
-				flags: Discord.ApplicationCommandFlags.Ephemeral,
-			}
-		});
-	}
-};
-const unsubscribe_alerts = async (b: Discord.Bot, i: Discord.Interaction) => {
-	if(!i.guildId) {
-		return await b.helpers.sendInteractionResponse(i.id, i.token, {
-			type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
-			data: {
-				content: "You must be in a server to use this command."
-			}
-		});
-	}
-	let guild = await db.getGuild(i.guildId);
-	if(!guild) {
-		log.info(`Guild ${i.guildId} not found in database. Creating new guild entry.`);
-		guild = {
-			guildId: i.guildId,
-			guildName: (await b.helpers.getGuild(i.guildId)).name,
-		}
-	}
-	if(!guild.hasAlerts) {
-		return await b.helpers.sendInteractionResponse(i.id, i.token, {
-			type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
-			data: {
-				content: `Not subscribed to alerts.`,
-				flags: Discord.ApplicationCommandFlags.Ephemeral,
-			}
-		})
-	}
-	await db.setGuild({
-		guildId: i.guildId,
-		guildName: guild.guildName,
-		hasAlerts: false,
-	});
-	return await b.helpers.sendInteractionResponse(i.id, i.token, {
-		type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
-		data: {
-			content: `Unsubscribed from alerts.`,
-			flags: Discord.ApplicationCommandFlags.Ephemeral,
-		}
-	});
-
-};
 
 const pollAlerts = async () => {
 	log.info("Polling for alerts");
-	const alerts = await getActiveAlerts({planned: true, accessibility: false, routes: ["red","blue","g","brn","p","y","pink","org"]});
+	const alerts = await getActiveAlerts({planned: true, accessibility: false, routes: ["red","blue","g","brn","p","y","pink","org"]}) || [];
 	alerts.forEach(async alert => {
 		await handleAlert(alert);
 	})
@@ -560,7 +417,7 @@ bot.helpers.createGlobalApplicationCommand({
 			type: Discord.ApplicationCommandOptionTypes.Integer,
 			required: false,
 		},
-	]
+	],
 });
 bot.helpers.createGlobalApplicationCommand({
 	name: "station_arrivals",

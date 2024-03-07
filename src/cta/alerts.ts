@@ -1,4 +1,4 @@
-import { discordLog } from "../logging.ts";
+import * as utils from "../utils.ts";
 
 type CTAAlerts = {
     CTAAlerts: {
@@ -121,7 +121,7 @@ export const getActiveAlerts = async (options?: {
         } as Alert
     });
     } catch (error) {
-        discordLog.error(error);
+        utils.log.error(error);
     }
 }
 

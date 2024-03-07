@@ -5,7 +5,7 @@ import { createSVGWindow, createSVGDocument,  } from "npm:svgdom";
 import { svg2png, initialize } from "./svg2png.ts"
 import { Arrival } from "../cta/arrivals.ts";
 import { trainLineString } from "../utils.ts";
-import { TrainLine } from "../types.ts";
+import { TrainLine } from "../../types.ts";
 import * as utils from "../utils.ts";
 import { getArrivalsForStop } from "../cta/arrivals.ts";
 

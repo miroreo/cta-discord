@@ -1,4 +1,4 @@
-import { Discord, log } from "../deps.ts";
+import { Discord, log } from "../../deps.ts";
 import {searchStations, stopsAtStation} from "../cta/stations.ts";
 import { getArrivalsForStation, getArrivalsForStop, type Arrival } from "../cta/arrivals.ts";
 import { generateArrivalsBoard } from "../arrivaldisplay/gen.ts";

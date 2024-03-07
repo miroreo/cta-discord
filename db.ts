@@ -1,5 +1,5 @@
 import { PostgresClient, loadEnv } from "./deps.ts";
-import * as utils from "./utils.ts";
+import * as utils from "./src/utils.ts";
 import { log } from "./deps.ts";
 import { initLog, discordLog } from "./logging.ts";
 
