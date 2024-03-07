@@ -15,6 +15,7 @@ export const command: Command = {
 		}
 		const pos = await updatePositions();
 		const badTrains = getBadRunNumbers(pos);
+		console.log(badTrains);
 		let response = "";
 		badTrains.forEach((train) => {
 			response = response + `${train.trainNumber} is a ${utils.trainLineString(train.route)} Line train.\n`;

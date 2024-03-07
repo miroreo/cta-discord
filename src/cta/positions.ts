@@ -153,7 +153,7 @@ function checkRunNumbers() {
     if(!runIssue) console.log("✅ No run number mismatches detected right now.")
 }
 export function getBadRunNumbers(positions: TrainPosition[]) {
-    let badTrains: TrainPosition[] = [];
+    const badTrains: TrainPosition[] = [];
     positions.forEach(train => {
         let susNumber = false;
         if (train.trainNumber == 1225){
@@ -192,11 +192,15 @@ export function getBadRunNumbers(positions: TrainPosition[]) {
                 susNumber = true;
         }
         if(susNumber) {
-            badTrains.push(train);
+            if(badTrains.filter(v => {
+                if(v.nextStation == train.nextStation && v.trainNumber == train.trainNumber) return true;
+                return false;
+            }).length == 0) badTrains.push(train);
             // console.log("⚠️ Run number mismatch detected ⚠️");
             // console.log(`🚇 Run ${train.trainNumber} is a ${utils.trainLineString(train.route)} line train.`);
         } 
     })
+    console.log(badTrains);
     return badTrains;
 }
 function checkDelays() {
