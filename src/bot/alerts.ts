@@ -49,26 +49,28 @@ const pushAlert = async (b: Discord.Bot, alert: Alert) => {
 			has_alerts: true
 		}
 	})
-	subscribers.forEach(async (sub) => {
+	await subscribers.forEach(async (sub) => {
 		if(!sub.alert_channel) return;
-		b.helpers.sendMessage(sub.alert_channel, {
-			embeds: [{
-				author: {
-					name: "CTA Alerts",
-					iconUrl: "https://www.transitchicago.com/assets/1/16/DimRiderToolDesktop/quick-link-4.png?14576"
-				},
-				color: parseInt(alert.severityColor.replace("#", "0x")),
-				title: alert.headline,
-				description: alert.shortDescription,
-				timestamp: new Date(alert.eventStart).valueOf(),
-			}]
-		}).then((msg) => {
+		try {
+			await b.helpers.sendMessage(sub.alert_channel, {
+				embeds: [{
+					author: {
+						name: "CTA Alerts",
+						iconUrl: "https://www.transitchicago.com/assets/1/16/DimRiderToolDesktop/quick-link-4.png?14576"
+					},
+					color: parseInt(alert.severityColor.replace("#", "0x")),
+					title: alert.headline,
+					description: alert.shortDescription,
+					timestamp: new Date(alert.eventStart).valueOf(),
+				}]
+			})
 			utils.log.info(`Published alert to ${sub.guild_name} in #${sub.alert_channel}`)
 			published++;
-		}).catch((e) => {
-			console.error(e);
-		});
+		} catch (e) {
+			utils.log.error(e);
+		}
 	});
+	// console.log(published)
 	return published;
 }
 const handleAlert = async (b: Discord.Bot, alert: Alert) => {
@@ -91,6 +93,7 @@ const handleAlert = async (b: Discord.Bot, alert: Alert) => {
 			}
 		});
 	}
+	console.log(alert.alertId);
 	const hasBeenPublished = await prisma.alert_history.findFirst({
 		where: {
 			alert_id: alert.alertId
@@ -99,29 +102,26 @@ const handleAlert = async (b: Discord.Bot, alert: Alert) => {
 			alert_id: true
 		}
 	});
-	if(!currentAlertId.value) {
-		return;
-	}
-	if(alert.alertId > parseInt(currentAlertId.value)|| !hasBeenPublished) {
+
+	if(!currentAlertId.value || alert.alertId > parseInt(currentAlertId.value) || !hasBeenPublished) {
 		const count = await pushAlert(b, alert);
-		if(count > 0) {
-			await prisma.kv_store.update({
-				where: {
-					key: "last_alert_id"
-				},
-				data: {
-					value: alert.alertId.toString()
-				}
-			});
-			await prisma.alert_history.create({
-				data: {
-					alert_id: alert.alertId,
-					published_to: count,
-					headline: alert.headline,
-					short_description: alert.shortDescription,
-					guid: alert.guid,
-				}
-			});
-		}
+		await prisma.kv_store.update({
+			where: {
+				key: "last_alert_id"
+			},
+			data: {
+				value: alert.alertId.toString()
+			}
+		});
+		console.log(alert.alertId);
+		await prisma.alert_history.create({
+			data: {
+				alert_id: alert.alertId,
+				published_to: count,
+				headline: alert.headline,
+				short_description: alert.shortDescription,
+				guid: alert.guid,
+			}
+		});
 	}
 }
