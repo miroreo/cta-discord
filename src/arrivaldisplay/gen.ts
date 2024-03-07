@@ -45,14 +45,44 @@ export const generateArrivalsBoard = async (stopDescription: string, arrivals: A
     .font({size: 25, weight: "bold"})
     .fill("#FFF");
   arrivals.forEach((arrival, i) => {
+    let toLoop = false;
     let inverse = false;
+    switch(arrival.route) { // handle trains that go around the loop
+      case TrainLine.BROWN: 
+        if(arrival.trainDirection == "5" && arrival.destination.stationName == "Kimball") {
+          toLoop = true;
+        }
+        break;
+      case TrainLine.PURPLE:
+        if(arrival.trainDirection == "5" && arrival.destination.stationName == "Linden") {
+          toLoop = true;
+        }
+        break;
+      case TrainLine.PURPLE_EXPRESS:
+        if(arrival.trainDirection == "5" && arrival.destination.stationName == "Linden") {
+          toLoop = true;
+        }
+        break;
+      case TrainLine.PINK:
+        if(arrival.trainDirection == "1" && arrival.destination.stationName == "54th/Cermak") {
+          toLoop = true;
+        }
+        break;
+      case TrainLine.ORANGE:
+        if(arrival.trainDirection == "1" && arrival.destination.stationName == "Midway") {
+          toLoop = true;
+        }
+        break;
+      default:
+        break;
+    }
     if(["Cottage Grove", "UIC-Halsted"].includes(arrival.destination.stationName)){
       inverse = true
     }
     canvas.rect(1200, 100)
       .fill("#" + (inverse ? "FFF" : utils.lineColor(arrival.route).toString(16).padStart(6, "0")))
       .move(0, 65 + (i * 105));
-    canvas.text(`${arrival.destination.stationName}`)
+    canvas.text(`${toLoop ? "Loop" : arrival.destination.stationName}`)
       .move(25, 115 + (i * 105))
       .font({size: 48, weight: "bold"})
       .fill(inverse ? "#" + utils.lineColor(arrival.route).toString(16).padStart(6, "0") : "#FFF");

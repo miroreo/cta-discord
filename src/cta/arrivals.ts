@@ -77,7 +77,7 @@ const parseArrival = (raw: RawArrival): Arrival => {
         stopId: parseInt(raw.stpId),
         stationName: raw.staNm,
         stopDescription: raw.stpDe,
-        trainDirection: raw.trDr as "N" | "S" | "E" | "W",
+        trainDirection: raw.trDr as "1" | "5" | "N" | "S" | "E" | "W",
     } as Arrival;
 }
 export const getArrivalsForStation = async (stationId: number): Promise<Arrival[]> => {
