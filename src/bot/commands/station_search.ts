@@ -16,6 +16,15 @@ export const command: Command = {
     ],
     execute: async (b: Discord.Bot, i: Discord.Interaction, options) => {
         const searchQuery = options.find((o) => o.name === "search")?.value as string;
+        if(searchQuery.length < 2) {
+            return await b.helpers.sendInteractionResponse(i.id, i.token, {
+                type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
+                data: {
+                    content: "Search query must be at least 2 characters long.",
+                    flags: Discord.ApplicationCommandFlags.Ephemeral
+                }
+            });
+        }
         const stations = await searchStations(searchQuery);
         if(stations.length === 0) {
             return await b.helpers.sendInteractionResponse(i.id, i.token, {
