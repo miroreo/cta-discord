@@ -25,7 +25,7 @@ export const handleCommands = async (b: Discord.Bot, i: Discord.Interaction) => 
 				}
 			});
 		}
-		await command.execute(b, i, []);
+		return await command.execute(b, i, []);
 	}
 	const command = commands.find((c) => c.name === i.data!.name);
 	if(!command) {
