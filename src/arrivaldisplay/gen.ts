@@ -3,11 +3,11 @@ import { SVG, registerWindow, Svg } from "npm:@svgdotjs/svg.js";
 /// <reference types="https://cdn.skypack.dev/@types/svgdom?dts" />
 import { createSVGWindow, createSVGDocument,  } from "npm:svgdom";
 import { svg2png, initialize } from "./svg2png.ts"
-import { Arrival } from "../src/cta/arrivals.ts";
+import { Arrival } from "../cta/arrivals.ts";
 import { trainLineString } from "../utils.ts";
-import { TrainLine } from "../types.ts";
+import { TrainLine } from "../../types.ts";
 import * as utils from "../utils.ts";
-import { getArrivalsForStop } from "../src/cta/arrivals.ts";
+import { getArrivalsForStop } from "../cta/arrivals.ts";
 
 await initialize(Deno.readFile("./wasm/svg2png.wasm")).catch(() => {});
 

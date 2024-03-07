@@ -10,7 +10,7 @@ This is a discord bot that interfaces with the Chicago Transit Authority API.
 - [x] broadcast_alert command 
 - [ ] getbadruns command
     - [ ] Refresh Option
-- [ ] Alerts Command
+- [x] Alerts Command
     - [x] Subscribe to Alerts
     - [x] Unsubscribe from Alerts
     - [x] list current alerts

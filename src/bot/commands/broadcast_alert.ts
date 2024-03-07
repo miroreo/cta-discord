@@ -1,7 +1,7 @@
 import { Discord } from "../../../deps.ts";
 import type { Command } from "./mod.ts";
 import { Prisma, PrismaClient } from "../../../prisma/client/deno/edge.ts"
-import * as utils from "../../../utils.ts";
+import * as utils from "../../utils.ts";
 
 await utils.ensureEnvs(["DATABASE_URL"]);
 const prisma = new PrismaClient({

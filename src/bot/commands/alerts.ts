@@ -1,6 +1,6 @@
 import { Discord } from "../../../deps.ts";
 import type { Command } from "./mod.ts";
-import * as utils from "../../../utils.ts";
+import * as utils from "../../utils.ts";
 import { Prisma, PrismaClient } from "../../../prisma/client/deno/edge.ts"
 import { getActiveAlerts } from "../../cta/alerts.ts";
 const config = await utils.ensureEnvs(["DATABASE_URL"]);

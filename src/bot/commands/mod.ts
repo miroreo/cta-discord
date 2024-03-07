@@ -5,10 +5,12 @@ import help from "./help.ts";
 import stationSearch from "./station_search.ts";
 import alerts from "./alerts.ts";
 import broadcast from "./broadcast_alert.ts"
-import * as utils from "../../../utils.ts";
+import getbadruns from "./getbadruns.ts";
+import * as utils from "../../utils.ts";
 import { bot } from "../bot.ts";
 
-export const commands = [alerts, arrivals, help, stationSearch, broadcast]
+export const commands = [alerts, arrivals, getbadruns, help, stationSearch, broadcast];
+
 export const handleCommands = async (b: Discord.Bot, i: Discord.Interaction) => {
 	utils.log.info("Handling command " + i.data?.name + " " + i.data?.customId);
 	if(!i.data || (!i.data.name && !i.data.customId)) return;
@@ -106,11 +108,13 @@ const validateOptions = async (b: Discord.Bot, i: Discord.Interaction, command: 
 	return options;
 }
 export const initCommands = async (b: Discord.Bot) => {
+	await removeUnusedCommands(b);
 	const registeredCommands = await Discord.getGlobalApplicationCommands(b);
 	const commandNames = registeredCommands.map((c) => c.name);
 	for(const command of commands) {
 		if(!commandNames.includes(command.name)) {
-			await Discord.createGlobalApplicationCommand(b, command);
+			if(!command.guildId) await Discord.createGlobalApplicationCommand(b, command);
+			else await Discord.createGuildApplicationCommand(b, command, command.guildId as Discord.BigString);
 		} else {
 			command.options?.forEach(async (option) => {
 				const existingOption = registeredCommands.find((c) => c.name === command.name)?.options?.find((o) => o.name === option.name);
@@ -130,7 +134,9 @@ export const initCommands = async (b: Discord.Bot) => {
 export const removeUnusedCommands = async (b: Discord.Bot) => {
 	const registeredCommands = await Discord.getGlobalApplicationCommands(b);
 	for(const [ id, command ] of registeredCommands) {
-		if(commands.find(c => c.name === command.name)) {
+		
+		if(!commands.find(c => c.name === command.name)) {
+			utils.log.info("Removing unused command " + command.name);
 			await Discord.deleteGlobalApplicationCommand(b, id);
 		}
 	}

@@ -1,0 +1,4 @@
+.env
+gtfs
+google_transit.zip
+node_modules

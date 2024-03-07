@@ -1,6 +1,6 @@
 import { Discord } from "../../../deps.ts";
 import type { Command } from "./mod.ts";
-import * as utils from "../../../utils.ts";
+import * as utils from "../../utils.ts";
 export const command: Command = {
     name: "uptime",
     description: "Get the uptime of the bot",

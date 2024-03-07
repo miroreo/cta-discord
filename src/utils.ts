@@ -1,6 +1,6 @@
-import { Discord, loadEnv, log as log_} from "./deps.ts";
-import { TrainLine } from './types.ts';
-import { discordLog, initLog } from "./logging.ts";
+import { Discord, loadEnv, log as log_} from "../deps.ts";
+import { TrainLine } from '../types.ts';
+import { discordLog, initLog } from "../logging.ts";
 
 export const startTime = Date.now();
 

@@ -1,4 +1,4 @@
-import { generateArrivalsBoard } from "../../../arrivaldisplay/gen.ts";
+import { generateArrivalsBoard } from "../../arrivaldisplay/gen.ts";
 import { Discord } from "../../../deps.ts";
 import { getArrivalsForStation } from "../../cta/arrivals.ts";
 import { getStation } from "../../cta/stations.ts";

@@ -1,6 +1,6 @@
 import { commands, Command } from "./mod.ts";
 import { Discord } from "../../../deps.ts";
-import * as utils from "../../../utils.ts";
+import * as utils from "../../utils.ts";
 
 export const command: Command = {
 	name: "help",

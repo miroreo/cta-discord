@@ -1,7 +1,8 @@
-import * as utils from "../../utils.ts";
+import * as utils from "../utils.ts";
 import { Discord } from "../../deps.ts";
 import commands, {handleCommands, removeUnusedCommands} from "./commands/mod.ts";
 import { initCommands } from "./commands/mod.ts";
+import { pollAlerts } from "./alerts.ts";
 
 await utils.ensureEnvs(["DISCORD_BOT_TOKEN"])
 export const bot = Discord.createBot({
@@ -24,6 +25,9 @@ export const bot = Discord.createBot({
 })
 await initCommands(bot);
 // await removeUnusedCommands(bot);
+const interval = setInterval(() => {
+    pollAlerts(bot);
+}, 10000);
 
 await Discord.startBot(bot);
 await Discord.editBotStatus(bot, {
