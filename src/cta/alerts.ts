@@ -1,4 +1,4 @@
-import { discordLog } from "../logging.ts";
+import { discordLog } from "../../logging.ts";
 
 type CTAAlerts = {
     CTAAlerts: {

@@ -1,9 +1,9 @@
-import { loadEnv, log } from "../deps.ts";
-import * as utils from "../utils.ts";
+import { loadEnv, log } from "../../deps.ts";
+import * as utils from "../../utils.ts";
 import { stops, searchStations } from "./stations.ts";
 import { getStop, getStopByName } from "./stations.ts";
-import { StationStop, TrainPosition } from "../types.ts";
-import { initLog, discordLog } from "../logging.ts";
+import { StationStop, TrainPosition } from "../../types.ts";
+import { initLog, discordLog } from "../../logging.ts";
 
 // initLog();
 

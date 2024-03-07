@@ -1,15 +1,15 @@
 import * as db from "./db.ts";
 import * as utils from "./utils.ts";
 import {Discord, loadEnv, log} from "./deps.ts";
-import {updatePositions, getBadRunNumbers, outOfPlaceTrains} from './cta/positions.ts';
-import {getActiveAlerts} from './cta/alerts.ts';
-import {searchStations} from './cta/stations.ts';
+import {updatePositions, getBadRunNumbers, outOfPlaceTrains} from './src/cta/positions.ts';
+import {getActiveAlerts} from './src/cta/alerts.ts';
+import {searchStations} from './src/cta/stations.ts';
 import { TrainLine } from "./types.ts";
-import { Alert } from "./cta/alerts.ts";
-import {Arrival, getArrivalsForStation} from './cta/arrivals.ts';
-import { getStation } from "./cta/stations.ts";
+import { Alert } from "./src/cta/alerts.ts";
+import {Arrival, getArrivalsForStation} from './src/cta/arrivals.ts';
+import { getStation } from "./src/cta/stations.ts";
 import {initLog, discordLog} from "./logging.ts";
-import { arrivalsForStation, stopArrivals} from "./bot/arrivals.ts";
+import { arrivalsForStation, stopArrivals} from "./src/bot/arrivals.ts";
 
 initLog();
 discordLog.debug("Bot Starting...");
@@ -240,7 +240,7 @@ const alerts_command = async (b: Discord.Bot, i: Discord.Interaction) => {
 	}
 	if(i.data?.options?.[0]?.name === "list") {
 		const activeAlerts = await getActiveAlerts({planned: true, accessibility: false, routes: ["red","blue","g","brn","p","y","pink","org"]});
-		if(activeAlerts.length === 0) {
+		if(activeAlerts?.length === 0) {
 			return await b.helpers.sendInteractionResponse(i.id, i.token, {
 				type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
 				data: {
@@ -560,7 +560,7 @@ bot.helpers.createGlobalApplicationCommand({
 			type: Discord.ApplicationCommandOptionTypes.Integer,
 			required: false,
 		},
-	]
+	],
 });
 bot.helpers.createGlobalApplicationCommand({
 	name: "station_arrivals",

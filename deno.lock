@@ -3,6 +3,7 @@
   "packages": {
     "specifiers": {
       "npm:@svgdotjs/svg.js": "npm:@svgdotjs/svg.js@3.2.0",
+      "npm:prisma@^5.10.2": "npm:prisma@5.10.2",
       "npm:prisma@latest": "npm:prisma@5.10.2",
       "npm:svg2png-wasm": "npm:svg2png-wasm@1.4.1",
       "npm:svgdom": "npm:svgdom@0.1.19"
