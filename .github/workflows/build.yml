@@ -21,7 +21,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=match,pattern=v(.*),group=1,value=v1.0.0
+            type=match,pattern=v(.*),group=1
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v3
       - name: Setup Docker Buildx
