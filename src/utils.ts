@@ -1,5 +1,5 @@
-import { Discord, loadEnv, log as log_} from "../deps.ts";
-import { TrainLine } from '../types.ts';
+import { Discord, loadEnv, log as log_ } from "../deps.ts";
+import { TrainLine } from "../types.ts";
 import { discordLog, initLog } from "../logging.ts";
 
 export const startTime = Date.now();
@@ -58,31 +58,31 @@ export function trainLineString(trainLine: TrainLine) {
   }
 }
 export const lineColor = (line: TrainLine) => {
-	switch(line) {
-		case TrainLine.BLUE:
-			return 0x00a1de;
-		case TrainLine.RED:
-			return 0xc60c30;
-		case TrainLine.GREEN:
-			return 0x009b3a;
-		case TrainLine.ORANGE:
-			return 0xf9461c;
-		case TrainLine.YELLOW:
-			return 0xf9e300;
-		case TrainLine.PURPLE:
-			return 0x522398;
-		case TrainLine.BROWN:
-			return 0x62361b;
-		case TrainLine.PURPLE_EXPRESS:
-			return 0x522398;
-		case TrainLine.PINK:
-			return 0xe27ea6;
-		default:
-			return 0x000000;
-	}
-}
+  switch (line) {
+    case TrainLine.BLUE:
+      return 0x00a1de;
+    case TrainLine.RED:
+      return 0xc60c30;
+    case TrainLine.GREEN:
+      return 0x009b3a;
+    case TrainLine.ORANGE:
+      return 0xf9461c;
+    case TrainLine.YELLOW:
+      return 0xf9e300;
+    case TrainLine.PURPLE:
+      return 0x522398;
+    case TrainLine.BROWN:
+      return 0x62361b;
+    case TrainLine.PURPLE_EXPRESS:
+      return 0x522398;
+    case TrainLine.PINK:
+      return 0xe27ea6;
+    default:
+      return 0x000000;
+  }
+};
 export async function ensureEnvs(envs: string[]) {
-  const config = await loadEnv({export: true});
+  const config = await loadEnv({ export: true });
   for (const env of envs) {
     if (!Deno.env.has(env)) {
       log.error(`Environment variable ${env} is not set.`);
@@ -98,9 +98,8 @@ export const log = {
   },
   warn: (message: string) => {
     discordLog.warn(message);
-
   },
   error: (message: string) => {
     discordLog.error(message);
-  }
-}
+  },
+};

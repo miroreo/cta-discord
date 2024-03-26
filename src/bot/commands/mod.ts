@@ -1,5 +1,4 @@
-import { Discord, log } from "../../../deps.ts"; 
-import { discordLog } from "../../../logging.ts";
+import { Discord } from "../../../deps.ts"; 
 import arrivals  from "./arrivals.ts";
 import help from "./help.ts";
 import stationSearch from "./station_search.ts";
@@ -7,7 +6,6 @@ import alerts from "./alerts.ts";
 import broadcast from "./broadcast_alert.ts"
 import getbadruns from "./getbadruns.ts";
 import * as utils from "../../utils.ts";
-import { bot } from "../bot.ts";
 
 export const commands = [alerts, arrivals, getbadruns, help, stationSearch, broadcast];
 
