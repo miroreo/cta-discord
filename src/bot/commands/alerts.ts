@@ -1,10 +1,9 @@
 import { Discord, drizzle, drizzlePostgres, postgres } from "../../../deps.ts";
 import type { Command } from "./mod.ts";
 import * as utils from "../../utils.ts";
-// import { Prisma, PrismaClient } from "../../../prisma/client/deno/edge.ts"
 import { getActiveAlerts } from "../../cta/alerts.ts";
 import { guilds } from "../../../db/schema.ts";
-// import { drizzle } from "https://deno.land/x/drizzle@v0.23.85/postgres.ts";
+
 const config = await utils.ensureEnvs(["DATABASE_URL"]);
 await utils.ensureEnvs(["DATABASE_URL"]);
 const queryClient = postgres(Deno.env.get("DATABASE_URL") as string);
