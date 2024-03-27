@@ -77,7 +77,11 @@ export const getActiveAlerts = async (options?: {
         options?.routes?.join(",")
       }`;
     const response = await fetch(url);
-    const data: CTAAlerts = await response.json();
+    const data: CTAAlerts = await response.json().catch((e) => {
+      if(e instanceof SyntaxError) {
+        utils.log.info("API returned invalid JSON. ")
+      }
+    });
     if (parseInt(data.CTAAlerts.ErrorCode) == 50) {
       return [];
     }

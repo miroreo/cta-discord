@@ -26,7 +26,6 @@ export const bot = Discord.createBot({
   },
 });
 await initCommands(bot);
-// await removeUnusedCommands(bot);
 const interval = setInterval(() => {
   pollAlerts(bot);
 }, 10000);

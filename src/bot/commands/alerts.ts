@@ -168,18 +168,21 @@ async function subscribeSubcommand(
       hasAlerts: true,
       alertChannel: channelId,
     }]).execute();
+    return await b.helpers.sendInteractionResponse(i.id, i.token, {
+      type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
+      data: {
+        content: `Alerts have been enabled in <#${channelId}>.`,
+      },
+    });
   } else if (!guildRecord?.hasAlerts) {
     await db.update(guilds).set({ hasAlerts: true, alertChannel: channelId })
       .where(drizzle.eq(guilds.guildId, guildId)).execute();
-    // await prisma.guilds.update({
-    // 	where: {
-    // 		guild_id: guildId
-    // 	},
-    // 	data: {
-    // 		has_alerts: true,
-    // 		alert_channel: channelId
-    // 	}
-    // });
+    return await b.helpers.sendInteractionResponse(i.id, i.token, {
+      type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
+      data: {
+        content: `Alerts have been enabled in <#${channelId}>.`,
+      },
+    });
   } else if (guildRecord?.alertChannel === channelId) {
     return await b.helpers.sendInteractionResponse(i.id, i.token, {
       type: Discord.InteractionResponseTypes.ChannelMessageWithSource,
