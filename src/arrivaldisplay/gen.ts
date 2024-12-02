@@ -137,7 +137,7 @@ export const generateArrivalsBoard = async (
       .fill(
         inverse
           ? "#" + utils.lineColor(arrival.route).toString(16).padStart(6, "0")
-          : "#FFF",
+          : (arrival.route == TrainLine.YELLOW ? "#000" : "#FFF"),
       );
 
     if (minutesUntil(arrival.arrivalTime) < 2) {
@@ -147,7 +147,7 @@ export const generateArrivalsBoard = async (
         .fill(
           inverse
             ? "#" + utils.lineColor(arrival.route).toString(16).padStart(6, "0")
-            : "#FFF",
+            : (arrival.route == TrainLine.YELLOW ? "#000" : "#FFF"),
         );
     } else {
       canvas.text(`${minutesUntil(arrival.arrivalTime)} min`)
@@ -156,7 +156,7 @@ export const generateArrivalsBoard = async (
         .fill(
           inverse
             ? "#" + utils.lineColor(arrival.route).toString(16).padStart(6, "0")
-            : "#FFF",
+            : (arrival.route == TrainLine.YELLOW ? "#000" : "#FFF"),
         );
     }
     if (arrival.isScheduled) {
@@ -167,7 +167,7 @@ export const generateArrivalsBoard = async (
         .fill(
           inverse
             ? "#" + utils.lineColor(arrival.route).toString(16).padStart(6, "0")
-            : "#FFF",
+            : (arrival.route == TrainLine.YELLOW ? "#000" : "#FFF"),
         );
     } else {
       canvas.use(tracking)
@@ -176,7 +176,7 @@ export const generateArrivalsBoard = async (
         .fill(
           inverse
             ? "#" + utils.lineColor(arrival.route).toString(16).padStart(6, "0")
-            : "#FFF",
+            : (arrival.route == TrainLine.YELLOW ? "#000" : "#FFF"),
         );
     }
   });
