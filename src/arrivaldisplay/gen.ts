@@ -107,7 +107,7 @@ export const generateArrivalsBoard = async (
         break;
     }
     if (
-      ["Cottage Grove", "UIC-Halsted"].includes(arrival.destination.stationName)
+      ["Cottage Grove", "UIC-Halsted"].includes(arrival.destination.stationName) 
     ) {
       inverse = true;
     }
@@ -125,7 +125,7 @@ export const generateArrivalsBoard = async (
       .fill(
         inverse
           ? "#" + utils.lineColor(arrival.route).toString(16).padStart(6, "0")
-          : "#FFF",
+          : (arrival.route == TrainLine.YELLOW ? "#000" : "#FFF"),
       );
     canvas.text(
       `${trainLineString(arrival.route)} Line #${
